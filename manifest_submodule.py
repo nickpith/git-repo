@@ -148,11 +148,12 @@ class SubmoduleManifest(Manifest):
       raise ManifestParseError, 'cannot upgrade manifest'
 
   def FromXml_Local_1(self, old, checkout):
+    oldmp = old.manifestProject
+    oldBranch = oldmp.CurrentBranch
+
     os.rename(old.manifestProject.gitdir,
               os.path.join(old.repodir, 'manifest.git'))
 
-    oldmp = old.manifestProject
-    oldBranch = oldmp.CurrentBranch
     b = oldmp.GetBranch(oldBranch).merge
     if not b:
       raise ManifestParseError, 'cannot upgrade manifest'
@@ -228,9 +229,9 @@ class SubmoduleManifest(Manifest):
       if not os.path.isdir(p.worktree):
         os.makedirs(p.worktree)
 
-      if os.path.isfile(os.path.join(p.worktree, '.git')):
+      if os.path.isdir(os.path.join(p.worktree, '.git')) or \
+         os.path.isfile(os.path.join(p.worktree, '.git')):
         p._LinkWorkTree(relink=True)
-
       self._CleanOldMRefs(p)
       if old_p and old_p.remote.name != my_remote:
         info.append("%s/: renamed remote '%s' to '%s'" \

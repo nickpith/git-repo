@@ -56,7 +56,8 @@ def _lwrite(path, content):
     fd.close()
 
   try:
-    os.rename(lock, path)
+    shutil.copy(lock, path)
+    os.remove(lock)
   except OSError:
     os.remove(lock)
     raise
@@ -105,7 +106,6 @@ def relpath(dst, src):
     rel += '../'
     tmp = os.path.dirname(tmp)
   return rel + dst[len(top) + 1:]
-
 
 class DownloadedChange(object):
   _commit_cache = None
@@ -1677,13 +1677,17 @@ class Project(object):
         else:
           _error("%s: Not replacing %s hook", self.relpath, name)
           continue
-      try:
-        os.symlink(relpath(stock_hook, dst), dst)
-      except OSError, e:
-        if e.errno == errno.EPERM:
-          raise GitError('filesystem must support symlinks')
-        else:
-          raise
+      if hasattr(os, 'symlink'):
+        try:
+          os.symlink(relpath(stock_hook, dst), dst)
+        except OSError, e:
+          if e.errno == errno.EPERM:
+            raise GitError('filesystem must support symlinks')
+          else:
+            raise
+      else:
+        # Windows user. Just copy this in
+        shutil.copy(stock_hook, dst)
 
   def _InitRemote(self):
     if self.remote.url:
@@ -1720,6 +1724,7 @@ class Project(object):
         msg = 'manifest set to %s' % self.revisionExpr
         self.bare_git.symbolic_ref('-m', msg, ref, dst)
 
+  # Creates a git link between .git and the git bare repository
   def _LinkWorkTree(self, relink=False):
     dotgit_path = os.path.join(self.worktree, '.git')
     if not relink and not os.path.isdir(self.worktree):

@@ -679,7 +679,8 @@ def main(orig_args):
   me.extend(orig_args)
   me.extend(extra_args)
   try:
-    os.execv(main, me)
+    subprocess.call(me, shell=True)
+    sys.exit(0);
   except OSError, e:
     print >>sys.stderr, "fatal: unable to start %s" % main
     print >>sys.stderr, "fatal: %s" % e

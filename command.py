@@ -16,6 +16,7 @@
 import os
 import optparse
 import sys
+import re
 
 from error import NoSuchProjectError
 
@@ -84,7 +85,8 @@ class Command(object):
           if os.path.exists(path):
             oldpath = None
             while path \
-              and path != oldpath \
+              and path != '/' \
+              and not re.match('^[a-zA-Z]:[\\\/]$', path) \
               and path != self.manifest.topdir:
               try:
                 project = by_path[path]

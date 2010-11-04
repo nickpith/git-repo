@@ -18,6 +18,7 @@ import re
 import sys
 import urlparse
 import xml.dom.minidom
+import shutil
 
 from git_config import GitConfig, IsId
 from project import RemoteSpec, Project, MetaProject, R_HEADS, HEAD
@@ -101,12 +102,18 @@ class XmlManifest(object):
     """
     self.Override(name)
 
-    try:
+    if hasattr(os, 'symlink'):
+      try:
+        if os.path.exists(self.manifestFile):
+          os.remove(self.manifestFile)
+        os.symlink('manifests/%s' % name, self.manifestFile)
+      except OSError, e:
+        raise ManifestParseError('cannot link manifest %s' % name)
+    else:
       if os.path.exists(self.manifestFile):
         os.remove(self.manifestFile)
-      os.symlink('manifests/%s' % name, self.manifestFile)
-    except OSError, e:
-      raise ManifestParseError('cannot link manifest %s' % name)
+        # Windows user. Just copy this in
+      shutil.copy('%s/manifests/%s' % (self.repodir, name), self.manifestFile)
 
   def _RemoteToXml(self, r, doc, root):
     e = doc.createElement('remote')
